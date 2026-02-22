@@ -34,6 +34,50 @@ fn bwt(text: &str) -> String {
 }
 
 // =====================
+// 1️⃣  build SA
+// =====================
+
+fn build_suffix_array(text: &str) -> Vec<usize>{
+    let mut s =  text.to_string();
+    if !s.ends_with('$') {
+        s.push('$'); // 终止符
+    }
+
+    let chars = s.chars().collect::<Vec<char>>();
+    let n = chars.len();
+    let mut suffixes = (0..n).map(|i|{
+        let suffix =chars[i..].iter().collect();
+        (suffix, i)
+    }).collect::<Vec<(String, usize)>>();
+    
+    suffixes.sort_by(|a,b| a.0.cmp(&b.0));
+    suffixes.iter().map(|(_,idx)| *idx).collect()
+}
+
+// =====================
+// 1️⃣  build bwt
+// =====================
+
+fn build_bwt(text: &str, sa:&Vec<usize>) -> Vec<char>{
+    let mut s = text.to_string();
+    if !s.ends_with('$') {
+        s.push('$'); // 终止符
+    }
+    let chars = s.chars().collect::<Vec<char>>();
+    let n = chars.len();
+    sa.iter().map(|&i|{
+        if i==0{
+            chars[n-1]
+        } else {
+            chars[i-1]
+        }
+    }).collect()
+
+}
+
+
+
+// =====================
 // 2️⃣  逆 BWT
 // =====================
 
@@ -65,12 +109,16 @@ struct FMIndex {
     bwt: Vec<char>,
     c_table: HashMap<char, usize>,
     occ_table: Vec<HashMap<char, usize>>,
+    sa: Vec<usize>, // 可选：存储后缀数组以支持位置恢复
 }
 
 impl FMIndex {
     fn new(text: &str) -> Self {
-        let bwt_string = bwt(text);
-        let bwt_chars: Vec<char> = bwt_string.chars().collect();
+        // let bwt_string = bwt(text);
+        
+        // let bwt_chars: Vec<char> = bwt_string.chars().collect();
+        let sa = build_suffix_array(text);
+        let bwt_chars = build_bwt(text, &sa);
 
         // 构建 C 表（每个字符在排序后文本中起始位置）
         let mut counts: HashMap<char, usize> = HashMap::new();
@@ -101,6 +149,7 @@ impl FMIndex {
             bwt: bwt_chars,
             c_table,
             occ_table,
+            sa, 
         }
     }
 
@@ -116,7 +165,7 @@ impl FMIndex {
     }
 
     // backward search
-    fn search(&self, pattern: &str) -> Option<(usize, usize)> {
+    fn search(&self, pattern: &str) -> Option<Vec<usize>> {
         let mut l = 0;
         let mut r = self.bwt.len() - 1;
 
@@ -135,7 +184,8 @@ impl FMIndex {
             }
         }
 
-        Some((l, r))
+        // Some((l, r))
+        Some(self.sa[l..=r].to_vec())
     }
 }
 
@@ -144,10 +194,13 @@ impl FMIndex {
 // =====================
 
 fn main() {
-    let text = "banana";
+    let text: &str = "banana";
 
     println!("Original: {}", text);
 
+    let suffixes = build_suffix_array(text);
+
+    let bwt_chars = build_bwt(text, &suffixes);
     let bwt_str = bwt(text);
     println!("BWT: {}", bwt_str);
 
@@ -156,14 +209,13 @@ fn main() {
 
     let fm = FMIndex::new(text);
 
-    let pattern = "ana";
+    let pattern = "a";
     match fm.search(pattern) {
-        Some((l, r)) => {
-            println!(
-                "Pattern '{}' found in BWT range: [{}, {}]",
-                pattern, l, r
-            );
-            println!("Occurrences: {}", r - l + 1);
+        Some(positions) => {
+            println!("Pattern '{}' found at positions:", pattern);
+            for pos in positions {
+                println!("{}", pos);
+            }
         },
         None => println!("Pattern '{}' not found", pattern),
     }
