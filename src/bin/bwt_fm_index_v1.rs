@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::time::Instant;
-use rand::{self, Rng};
+use rand;
+use rand;
 
 // =====================
 // 1️⃣  BWT
@@ -207,32 +207,29 @@ fn generate_random_dna(n: usize) -> String {
 // =====================
 
 fn main() {
-    // let n = 1_000_000;
-    let n = 1_000_000;
+    let text: &str = "banana";
 
-    println!("Generating {} characters...", n);
-    let text = generate_random_dna(n);
+    println!("Original: {}", text);
 
-    println!("Building FM-index...");
-    let start = Instant::now();
+    // let suffixes = build_suffix_array(text);
 
-    let fm = FMIndex::new(&text);
+    // let bwt_chars = build_bwt(text, &suffixes);
+    // let bwt_str = bwt(text);
+    // println!("BWT: {}", bwt_str);
 
-    let duration = start.elapsed();
-    println!("Index built in: {:?}", duration);
+    // let restored = inverse_bwt(&bwt_str);
+    // println!("Inverse BWT: {}", restored);
 
+    let fm = FMIndex::new(text);
 
-     let pattern = "ACGT";
-
-    let start_search = Instant::now();
-    let result = fm.search(pattern);
-    let search_time = start_search.elapsed();
-
-    match result {
-        Some(pos) => println!("Found {} matches", pos.len()),
-        None => println!("No match"),
+    let pattern = "a";
+    match fm.search(pattern) {
+        Some(positions) => {
+            println!("Pattern '{}' found at positions:", pattern);
+            for pos in positions {
+                println!("{}", pos);
+            }
+        },
+        None => println!("Pattern '{}' not found", pattern),
     }
-
-    println!("Search time: {:?}", search_time);
-   
 }
