@@ -35,49 +35,6 @@ fn bwt(text: &str) -> String {
         .collect()
 }
 
-// =====================
-// 1️⃣  build SA
-// =====================
-
-fn build_suffix_array(text: &str) -> Vec<usize>{
-    let mut s =  text.to_string();
-    if !s.ends_with('$') {
-        s.push('$'); // 终止符
-    }
-
-    let chars = s.chars().collect::<Vec<char>>();
-    let n = chars.len();
-    let mut suffixes = (0..n).map(|i|{
-        let suffix =chars[i..].iter().collect();
-        (suffix, i)
-    }).collect::<Vec<(String, usize)>>();
-    
-    suffixes.sort_by(|a,b| a.0.cmp(&b.0));
-    suffixes.iter().map(|(_,idx)| *idx).collect()
-}
-
-// =====================
-// 1️⃣  build bwt
-// =====================
-
-fn build_bwt(text: &str, sa:&Vec<usize>) -> Vec<char>{
-    let mut s = text.to_string();
-    if !s.ends_with('$') {
-        s.push('$'); // 终止符
-    }
-    let chars = s.chars().collect::<Vec<char>>();
-    let n = chars.len();
-    sa.iter().map(|&i|{
-        if i==0{
-            chars[n-1]
-        } else {
-            chars[i-1]
-        }
-    }).collect()
-
-}
-
-
 
 // =====================
 // 2️⃣  逆 BWT
@@ -102,6 +59,65 @@ fn inverse_bwt(bwt: &str) -> String {
 
     String::new()
 }
+
+
+
+// =====================
+// 1️⃣  build SA
+// =====================
+
+fn build_suffix_array_v1(text: &str) -> Vec<usize>{
+    let mut s =  text.to_string();
+    if !s.ends_with('$') {
+        s.push('$'); // 终止符
+    }
+
+    let chars = s.chars().collect::<Vec<char>>();
+    let n = chars.len();
+    let mut suffixes = (0..n).map(|i|{
+        let suffix =chars[i..].iter().collect();
+        (suffix, i)
+    }).collect::<Vec<(String, usize)>>();
+    
+    suffixes.sort_by(|a,b| a.0.cmp(&b.0));
+    suffixes.iter().map(|(_,idx)| *idx).collect()
+}
+fn build_suffix_array(text: &str) -> Vec<usize> {
+    let mut s = text.as_bytes().to_vec();
+    if !s.ends_with(&[b'$']) {
+        s.push(b'$');
+    }
+
+    let n = s.len();
+    let mut sa: Vec<usize> = (0..n).collect();
+
+    sa.sort_by(|&i, &j| s[i..].cmp(&s[j..]));
+
+    sa
+}
+// =====================
+// 1️⃣  build bwt
+// =====================
+
+fn build_bwt(text: &str, sa:&Vec<usize>) -> Vec<char>{
+    let mut s = text.to_string();
+    if !s.ends_with('$') {
+        s.push('$'); // 终止符
+    }
+    let chars = s.chars().collect::<Vec<char>>();
+    let n = chars.len();
+    sa.iter().map(|&i|{
+        if i==0{
+            chars[n-1]
+        } else {
+            chars[i-1]
+        }
+    }).collect()
+
+}
+
+
+
 
 // =====================
 // 3️⃣  FM-index

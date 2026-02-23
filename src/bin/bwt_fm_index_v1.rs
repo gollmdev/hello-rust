@@ -1,10 +1,32 @@
 use std::collections::HashMap;
-use rand;
-use rand;
+use rand::{self, Rng};
 
 // =====================
 // 1️⃣  BWT
 // =====================
+// =====================
+// 2️⃣  逆 BWT
+// =====================
+
+fn inverse_bwt(bwt: &str) -> String {
+    let n = bwt.len();
+    let mut table: Vec<String> = vec![String::new(); n];
+
+    for _ in 0..n {
+        for (i, c) in bwt.chars().enumerate() {
+            table[i] = format!("{}{}", c, table[i]);
+        }
+        table.sort();
+    }
+
+    for row in table {
+        if row.ends_with('$') {
+            return row;
+        }
+    }
+
+    String::new()
+}
 
 fn bwt(text: &str) -> String {
     let mut s = text.to_string();
@@ -39,7 +61,7 @@ fn bwt(text: &str) -> String {
 // 1️⃣  build SA
 // =====================
 
-fn build_suffix_array(text: &str) -> Vec<usize>{
+fn build_suffix_array_v1(text: &str) -> Vec<usize>{
     let mut s =  text.to_string();
     if !s.ends_with('$') {
         s.push('$'); // 终止符
@@ -56,6 +78,19 @@ fn build_suffix_array(text: &str) -> Vec<usize>{
     suffixes.iter().map(|(_,idx)| *idx).collect()
 }
 
+fn build_suffix_array(text: &str) -> Vec<usize> {
+    let mut s = text.as_bytes().to_vec();
+    if !s.ends_with(&[b'$']) {
+        s.push(b'$');
+    }
+
+    let n = s.len();
+    let mut sa: Vec<usize> = (0..n).collect();
+
+    sa.sort_by(|&i, &j| s[i..].cmp(&s[j..]));
+
+    sa
+}
 // =====================
 // 1️⃣  build bwt
 // =====================
@@ -79,29 +114,6 @@ fn build_bwt(text: &str, sa:&Vec<usize>) -> Vec<char>{
 
 
 
-// =====================
-// 2️⃣  逆 BWT
-// =====================
-
-fn inverse_bwt(bwt: &str) -> String {
-    let n = bwt.len();
-    let mut table: Vec<String> = vec![String::new(); n];
-
-    for _ in 0..n {
-        for (i, c) in bwt.chars().enumerate() {
-            table[i] = format!("{}{}", c, table[i]);
-        }
-        table.sort();
-    }
-
-    for row in table {
-        if row.ends_with('$') {
-            return row;
-        }
-    }
-
-    String::new()
-}
 
 // =====================
 // 3️⃣  FM-index
@@ -211,7 +223,7 @@ fn main() {
 
     println!("Original: {}", text);
 
-    // let suffixes = build_suffix_array(text);
+    let suffixes = build_suffix_array_v1(text);
 
     // let bwt_chars = build_bwt(text, &suffixes);
     // let bwt_str = bwt(text);
